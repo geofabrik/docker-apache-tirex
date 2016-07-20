@@ -1,0 +1,17 @@
+24c24
+< procs=3
+---
+> procs=6
+37c37
+< plugindir=/usr/lib/mapnik/input
+---
+> plugindir=/usr/lib/mapnik/2.2/input
+42c42
+< fontdir=/usr/lib/mapnik/fonts
+---
+> fontdir=/usr/share/fonts/
+46c46
+< #fontdir_recurse=0
+---
+> fontdir_recurse=1
+
