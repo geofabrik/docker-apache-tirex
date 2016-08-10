@@ -17,3 +17,6 @@ For now the following credentials are fixed:
 # usage
 
 * e. g. use docker-compose to link a postgis container to use this container
+
+# credits
+The creation of this Open Source Docker container was sponsored by Siemens AG (Building Technologies Division).
