@@ -3,7 +3,7 @@ services:
     postgis:
         image: geofabrik/docker-postgis
         volumes:
-            # place your *.osm files here
+            # place your xml data as *.osm files here
             - ./import:/data/import:ro
         expose:
             - 5432
@@ -13,9 +13,7 @@ services:
             - postgis
         entrypoint: ./wait-for-postgres.sh postgis /usr/local/bin/start.sh
         volumes:
-            # place your tile gz files here e.g. osm0-12.gz and osmbright0-12.gz
-            - ./osm:/data/osm
-            # here the extracted files will be placed
+            # in ./osmbright and/or ./osmcarto the extracted tiles must be placed
             - ./osmbright:/var/lib/tirex/tiles/osmbright
             - ./osmcarto:/var/lib/tirex/tiles/osmcarto
         expose:
