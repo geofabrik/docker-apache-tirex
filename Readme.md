@@ -15,8 +15,11 @@ For now the following credentials are fixed:
 * currently the shapefiles for countryborders etc. are inside the image and *not* downloaded extra
 
 # usage
-
-* e. g. use docker-compose to link a postgis container to use this container
+* clone this repository, cd docker-apache-tirex
+* place the OpenStreetMap XML files ```*.osm``` into the folder ```./import```
+* place prerendered tiles into the directories ```./osmbright``` and ```./osmcarto```
+* run ```docker-compose up```
+* open your browser http://<docker-ip>:8081/osm/slippymap.html
 
 # credits
 The creation of this Open Source Docker container was sponsored by Siemens AG (Building Technologies Division).
