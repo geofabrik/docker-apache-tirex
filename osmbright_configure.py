@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from os import path, getcwd, environ
+from os import path, getcwd
 from collections import defaultdict
 config = defaultdict(defaultdict)
 
@@ -12,7 +12,7 @@ config["importer"] = "osm2pgsql" # either 'imposm' or 'osm2pgsql'
 # in which the project is stored
 config["name"] = "OSM Bright"
 
-# The absolute path to your MapBox projects directory. You should
+# The absolute path to your MapBox projects directory. You should 
 # not need to change this unless you have configured TileMill specially
 config["path"] = path.expanduser("/srv/osm-bright")
 
@@ -34,7 +34,7 @@ config["postgis"]["extent"] = "-20037508.34,-20037508.34,20037508.34,20037508.34
 # Land shapefiles required for the style. If you have already downloaded
 # these or wish to use different versions, specify their paths here.
 # You will need to unzip these files before running make.py
-# These OSM land shapefiles are updated daily and can be downloaded at:
+# These OSM land shapefiles are updated daily and can be downloaded at: 
 # - http://data.openstreetmapdata.com/simplified-land-polygons-complete-3857.zip
 # - http://data.openstreetmapdata.com/land-polygons-split-3857.zip
 
