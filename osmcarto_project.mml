@@ -646,7 +646,7 @@ Layer:
         (SELECT
             way,
             COALESCE((
-              'highway_' || (CASE WHEN highway IN ('residential', 'unclassified', 'pedestrian', 'service', 'footway', 'cycleway', 'track', 'path', 'platform') THEN highway END)),
+              'highway_' || (CASE WHEN highway IN ('pedestrian', 'footway', 'service', 'platform') THEN highway END)),
               ('railway_' || (CASE WHEN (railway IN ('platform')
                               AND (tags->'location' NOT IN ('underground') OR (tags->'location') IS NULL)
                               AND (tunnel NOT IN ('yes', 'building_passage') OR tunnel IS NULL)
@@ -654,7 +654,7 @@ Layer:
                               THEN railway END))
             ) AS feature
           FROM planet_osm_polygon
-          WHERE highway IN ('residential', 'unclassified', 'pedestrian', 'service', 'footway', 'track', 'path', 'platform')
+          WHERE highway IN ('pedestrian', 'footway', 'service', 'platform')
             OR (railway IN ('platform')
                 AND (tags->'location' NOT IN ('underground') OR (tags->'location') IS NULL)
                 AND (tunnel NOT IN ('yes', 'building_passage') OR tunnel IS NULL)
@@ -768,8 +768,8 @@ Layer:
         (SELECT
             way,
             COALESCE(
-              ('highway_' || (CASE WHEN highway IN ('residential', 'unclassified', 'pedestrian', 'service', 'footway', 'cycleway', 'living_street',
-                                                    'track', 'path', 'platform', 'services') THEN highway END)),
+              ('highway_' || (CASE WHEN highway IN ('pedestrian', 'footway', 'service', 'living_street',
+                                                    'platform', 'services') THEN highway END)),
               ('railway_' || (CASE WHEN (railway IN ('platform')
                               AND (tags->'location' NOT IN ('underground') OR (tags->'location') IS NULL)
                               AND (tunnel NOT IN ('yes', 'building_passage') OR tunnel IS NULL)
@@ -778,7 +778,7 @@ Layer:
               (('aeroway_' || CASE WHEN aeroway IN ('runway', 'taxiway', 'helipad') THEN aeroway END))
             ) AS feature
           FROM planet_osm_polygon
-          WHERE highway IN ('residential', 'unclassified', 'pedestrian', 'service', 'footway', 'living_street', 'track', 'path', 'platform', 'services')
+          WHERE highway IN ('pedestrian', 'footway', 'service', 'living_street', 'platform', 'services')
             OR (railway IN ('platform')
                 AND (tags->'location' NOT IN ('underground') OR (tags->'location') IS NULL)
                 AND (tunnel NOT IN ('yes', 'building_passage') OR tunnel IS NULL)
@@ -822,9 +822,12 @@ Layer:
             OR (man_made = 'pipeline'
                 AND tags-> 'location' IN ('overground', 'overhead', 'surface', 'outdoor')
                 OR bridge IN ('yes', 'aqueduct', 'cantilever', 'covered', 'trestle', 'viaduct'))
+            OR (man_made = 'goods_conveyor'
+                AND (tags->'location' NOT IN ('underground') OR (tags->'location') IS NULL)
+                AND (tunnel NOT IN ('yes') OR tunnel IS NULL))
           ORDER BY
             CASE
-              WHEN man_made = 'pipeline' THEN 1
+              WHEN man_made IN ('goods_conveyor', 'pipeline') THEN 1
               WHEN tags-> 'location' = 'overhead' THEN 2
               WHEN bridge IS NOT NULL THEN 3
               WHEN aerialway IS NOT NULL THEN 4
@@ -1045,7 +1048,7 @@ Layer:
         ) AS admin_low_zoom
     properties:
       minzoom: 4
-      maxzoom: 10
+      maxzoom: 7
   - id: admin-mid-zoom
     geometry: linestring
     <<: *extents
@@ -1062,7 +1065,7 @@ Layer:
           ORDER BY admin_level DESC
         ) AS admin_mid_zoom
     properties:
-      minzoom: 11
+      minzoom: 8
       maxzoom: 12
   - id: admin-high-zoom
     geometry: linestring
@@ -1201,6 +1204,7 @@ Layer:
             ST_PointOnSurface(way) AS way,
             way_area/NULLIF(POW(!scale_denominator!*0.001*0.28,2),0) AS way_pixels,
             name,
+            admin_level,
             ref
           FROM planet_osm_polygon
           WHERE way && !bbox!
@@ -1397,6 +1401,31 @@ Layer:
         ) AS bridge_text
     properties:
       minzoom: 11
+  - id: county-names
+    geometry: point
+    <<: *extents
+    Datasource:
+      <<: *osm2pgsql
+      table: |-
+        (SELECT
+            ST_PointOnSurface(way) AS way,
+            way_area/NULLIF(POW(!scale_denominator!*0.001*0.28,2),0) AS way_pixels,
+            name,
+            admin_level
+          FROM planet_osm_polygon
+          WHERE way && !bbox!
+            AND boundary = 'administrative'
+            AND admin_level IN ('5', '6')
+            AND name IS NOT NULL
+            AND way_area > 12000*POW(!scale_denominator!*0.001*0.28,2)
+            AND way_area < 196000*POW(!scale_denominator!*0.001*0.28,2)
+            AND osm_id < 0
+          ORDER BY
+            admin_level,
+            way_area DESC
+        ) AS county_names
+    properties:
+      minzoom: 8
   - id: amenity-points
     geometry: point
     <<: *extents
@@ -1762,7 +1791,7 @@ Layer:
             name
           FROM planet_osm_polygon
           WHERE way && !bbox!
-            AND (highway IN ('residential', 'unclassified', 'pedestrian', 'service', 'footway', 'cycleway', 'living_street', 'track', 'path', 'platform')
+            AND (highway IN ('pedestrian', 'footway', 'service', 'living_street', 'platform')
               OR (railway IN ('platform')
                   AND (tags->'location' NOT IN ('underground') OR (tags->'location') IS NULL)
                   AND (tunnel NOT IN ('yes', 'building_passage') OR tunnel IS NULL)
@@ -2029,9 +2058,11 @@ Layer:
             "addr:housenumber" AS addr_housenumber,
             "addr:housename" AS addr_housename,
             tags->'addr:unit' AS addr_unit,
+            tags->'addr:flats' AS addr_flats,
             way_area/NULLIF(POW(!scale_denominator!*0.001*0.28,2),0) AS way_pixels
           FROM planet_osm_polygon
-          WHERE way && !bbox! AND (("addr:housenumber" IS NOT NULL) OR ("addr:housename" IS NOT NULL) OR ((tags->'addr:unit') IS NOT NULL))
+          WHERE way && !bbox!
+            AND (("addr:housenumber" IS NOT NULL) OR ("addr:housename" IS NOT NULL) OR ((tags->'addr:unit') IS NOT NULL) OR ((tags->'addr:flats') IS NOT NULL))
             AND building IS NOT NULL
             AND way_area < 4000000*POW(!scale_denominator!*0.001*0.28,2)
         UNION ALL
@@ -2040,9 +2071,11 @@ Layer:
             "addr:housenumber" AS addr_housenumber,
             "addr:housename" AS addr_housename,
             tags->'addr:unit' AS addr_unit,
+            tags->'addr:flats' AS addr_flats,
             NULL AS way_pixels
           FROM planet_osm_point
-          WHERE way && !bbox! AND (("addr:housenumber" IS NOT NULL) OR ("addr:housename" IS NOT NULL) OR ((tags->'addr:unit') IS NOT NULL))
+          WHERE way && !bbox!
+            AND (("addr:housenumber" IS NOT NULL) OR ("addr:housename" IS NOT NULL) OR ((tags->'addr:unit') IS NOT NULL) OR ((tags->'addr:flats') IS NOT NULL))
           ORDER BY way_pixels DESC NULLS LAST
         ) AS addresses
     properties:
@@ -2105,6 +2138,7 @@ Layer:
             AND admin_level IN ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10')
             AND name IS NOT NULL
             AND osm_id < 0
+            AND way_area > 196000*POW(!scale_denominator!*0.001*0.28,2)
           ORDER BY admin_level::integer ASC, way_area DESC
         ) AS admin_text
     properties:

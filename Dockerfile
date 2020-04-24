@@ -79,6 +79,7 @@ RUN cd /srv \
  && cd /srv/osm-bright \
  && ./make.py \
  && cd OSMBright; carto project.mml > project.xml \
+# osm-carto style
  && cd /srv/openstreetmap-carto; carto project.mml > project.xml
 
 
